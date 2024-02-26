@@ -29,7 +29,9 @@ class MatplotlibWidget(FigureCanvas):
         points_only: bool = False,
         color: str = "blue",
     ) -> None:
-        self.ax.plot(x, y, ("o" if points_only else "o-") if show_points else "", color=color)
+        self.ax.plot(
+            x, y, ("o" if points_only else "o-") if show_points else "", color=color,
+        )
         self.ax.set_title(title)
         self.ax.set_xlabel(x_label)
         self.ax.set_ylabel(y_label)

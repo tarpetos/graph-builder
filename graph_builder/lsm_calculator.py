@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, List, Any
+from typing import Tuple, List
 
 import numpy as np
 
@@ -98,7 +98,9 @@ class ParabolicCalculator(BaseLSMCalculator):
         return tuple(np.linalg.solve(left_matrix_half, right_matrix_half))
 
     def recalculate(self, *a_val, x_values: List[float]) -> List[float]:
-        return [round(a_val[0] + (a_val[1] * x) + (a_val[2] * x**2), 3) for x in x_values]
+        return [
+            round(a_val[0] + (a_val[1] * x) + (a_val[2] * x**2), 3) for x in x_values
+        ]
 
     def find_lsm_points(self) -> Tuple[List[float], List[float]]:
         a0, a1, a2 = self.calculate()

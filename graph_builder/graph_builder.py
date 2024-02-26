@@ -1,3 +1,8 @@
+########################################################################################################################
+#                                               Тарас - 5 букв, A = -0.5                                               #
+#                                               Гевліч - 6 букв, B = 0.6                                               #
+#                                             Вікторович - 10 букв, C = 10                                             #
+########################################################################################################################
 import json
 import math
 import os
@@ -165,12 +170,18 @@ class GraphBuilderWindow(QMainWindow):
                 setattr(
                     self,
                     f"{attr}_action",
-                    QAction(f"&{attr.removeprefix(self.__func_prefix)}", self, checkable=True),
+                    QAction(
+                        f"&{attr.removeprefix(self.__func_prefix)}",
+                        self,
+                        checkable=True,
+                    ),
                 )
 
     def _fill_menu_with_func_actions(self) -> None:
         for attr in dir(self):
-            if attr.startswith(self.__func_prefix) and attr.endswith(self.__action_suffix):
+            if attr.startswith(self.__func_prefix) and attr.endswith(
+                self.__action_suffix
+            ):
                 func = getattr(self, attr)
                 func.triggered.connect(
                     lambda checked, action_name=attr: self._process_func_menu(
@@ -193,7 +204,11 @@ class GraphBuilderWindow(QMainWindow):
         self.func_menu = QMenu("&Function", self)
         edit_menu.addMenu(self.func_menu)
         self._fill_menu_with_func_actions()
-        self._chosen_action = self.__func_prefix + self.func_menu.actions()[0].text()[1:] + self.__action_suffix
+        self._chosen_action = (
+            self.__func_prefix
+            + self.func_menu.actions()[0].text()[1:]
+            + self.__action_suffix
+        )
         self.func_menu.actions()[0].setChecked(True)
         edit_menu.addAction(self.clear_action)
 
@@ -283,17 +298,17 @@ class GraphBuilderWindow(QMainWindow):
             ).display()
 
     def _build_plot(self, action_name: str) -> None:
-        self._chosen_func = getattr(self, action_name.removesuffix(self.__action_suffix))
+        self._chosen_func = getattr(
+            self, action_name.removesuffix(self.__action_suffix)
+        )
 
         if self._chosen_func:
+            points = self.get_points(self._chosen_func, *self._coefficients)
             self._generate_plot(
                 [
                     (
                         asdict(
-                            PlotData(
-                                points=self.get_points(self._chosen_func, *self._coefficients),
-                                points_only=True,
-                            ),
+                            PlotData(points=points, points_only=True),
                         )
                         if self.show_points.isChecked()
                         else None
@@ -301,10 +316,8 @@ class GraphBuilderWindow(QMainWindow):
                     (
                         asdict(
                             PlotData(
-                                points=LinearCalculator(
-                                    self.get_points(self._chosen_func, *self._coefficients)
-                                ).find_lsm_points(),
-                                show_points=False,
+                                points=LinearCalculator(points).find_lsm_points(),
+                                show_points=self.show_points.isChecked(),
                             )
                         )
                         if self.show_linear.isChecked()
@@ -313,10 +326,8 @@ class GraphBuilderWindow(QMainWindow):
                     (
                         asdict(
                             PlotData(
-                                points=ParabolicCalculator(
-                                    self.get_points(self._chosen_func, *self._coefficients)
-                                ).find_lsm_points(),
-                                show_points=False,
+                                points=ParabolicCalculator(points).find_lsm_points(),
+                                show_points=self.show_points.isChecked(),
                             ),
                         )
                         if self.show_parabola.isChecked()
@@ -335,8 +346,9 @@ class GraphBuilderWindow(QMainWindow):
         if not x_value or not self._chosen_func or not self._coefficients:
             return None
 
-        lin_calc = LinearCalculator(self.get_points(self._chosen_func, *self._coefficients))
-        par_calc = ParabolicCalculator(self.get_points(self._chosen_func, *self._coefficients))
+        points = self.get_points(self._chosen_func, *self._coefficients)
+        lin_calc = LinearCalculator(points)
+        par_calc = ParabolicCalculator(points)
         a0, a1 = lin_calc.calculate()
         lin_res = lin_calc.recalculate(a0, a1, x_values=[x_value])[0]
         a0, a1, a2 = par_calc.calculate()
@@ -371,8 +383,8 @@ class GraphBuilderWindow(QMainWindow):
             self._reload_scene()
 
     def _generate_plot(
-            self,
-            graphs_values: List[Dict[str, Union[Tuple[List[float], List[float]], bool]]],
+        self,
+        graphs_values: List[Dict[str, Union[Tuple[List[float], List[float]], bool]]],
     ) -> None:
         self._matplotlib_widget = MatplotlibWidget()
         for graph_data, color in zip(graphs_values, ("blue", "red", "green")):
@@ -380,7 +392,8 @@ class GraphBuilderWindow(QMainWindow):
                 continue
             x, y = graph_data["points"]
             self._matplotlib_widget.plot(
-                x, y,
+                x,
+                y,
                 show_points=graph_data["show_points"],
                 points_only=graph_data["points_only"],
                 color=color,
@@ -403,7 +416,7 @@ class GraphBuilderWindow(QMainWindow):
 
     @staticmethod
     def calc_sin_3x_squared(x: float) -> float:
-        return math.sin(3 * (x ** 2))
+        return math.sin(3 * (x**2))
 
     @staticmethod
     def calc_atan_4x_plus_2(x: float) -> float:
@@ -415,14 +428,14 @@ class GraphBuilderWindow(QMainWindow):
 
     @staticmethod
     def calc_eps_power_x(x: float) -> float:
-        return math.e ** x
+        return math.e**x
 
     @staticmethod
     def get_points(
-            func: Callable,
-            start_x: float,
-            end_x: float,
-            step_num: int,
+        func: Callable,
+        start_x: float,
+        end_x: float,
+        step_num: int,
     ) -> Tuple[List[float], List[float]]:
         step = abs(end_x - start_x) / step_num
         x_values, y_values = [], []
