@@ -59,11 +59,12 @@ class GraphBuilderWindow(QMainWindow):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
+
         self.setWindowTitle(self.TITLE)
         self.setMinimumSize(*self.MIN_SIZE)
+
         self.__func_prefix = "calc_"
         self.__action_suffix = "_action"
-        self._coefficients = None
         self._chosen_action = None
         self._chosen_func = None
         self._matplotlib_widget = None
@@ -76,6 +77,9 @@ class GraphBuilderWindow(QMainWindow):
         self._click_on_buttons()
         self._trigger_actions()
         self._create_tool_bar()
+
+        self._coefficients = Coefficients()
+        self._set_coefficients()
 
     def _init_ui(self) -> None:
         self.central_widget = QWidget()
@@ -166,10 +170,10 @@ class GraphBuilderWindow(QMainWindow):
                 setattr(
                     self,
                     f"{attr}_action",
-                    QAction(f"&{attr.removeprefix(self.__func_prefix)}", self),
+                    QAction(f"&{attr.removeprefix(self.__func_prefix)}", self, checkable=True),
                 )
 
-    def _fill_menu_with_func_actions(self, menu: QMenu) -> None:
+    def _fill_menu_with_func_actions(self) -> None:
         for attr in dir(self):
             if attr.startswith(self.__func_prefix) and attr.endswith(self.__action_suffix):
                 func = getattr(self, attr)
@@ -178,7 +182,7 @@ class GraphBuilderWindow(QMainWindow):
                         action_name
                     )
                 )
-                menu.addAction(func)
+                self.func_menu.addAction(func)
 
     def _create_menu_bar(self) -> None:
         menu_bar = self.menuBar()
@@ -191,10 +195,11 @@ class GraphBuilderWindow(QMainWindow):
         menu_bar.addMenu(file_menu)
 
         edit_menu = menu_bar.addMenu("&Edit")
-        func_menu = QMenu("&Function", self)
-        edit_menu.addMenu(func_menu)
-        self._fill_menu_with_func_actions(func_menu)
-        self._chosen_action = self.__func_prefix + func_menu.actions()[0].text()[1:] + self.__action_suffix
+        self.func_menu = QMenu("&Function", self)
+        edit_menu.addMenu(self.func_menu)
+        self._fill_menu_with_func_actions()
+        self._chosen_action = self.__func_prefix + self.func_menu.actions()[0].text()[1:] + self.__action_suffix
+        self.func_menu.actions()[0].setChecked(True)
         edit_menu.addAction(self.clear_action)
 
     def _click_on_buttons(self) -> None:
@@ -225,9 +230,7 @@ class GraphBuilderWindow(QMainWindow):
         data = self._open_parse_file(file_path)
         if data:
             self._coefficients = Coefficients(data[0][0], data[0][-1], len(data[0]) - 1)
-            self.a_input.setText(str(self._coefficients.A))
-            self.b_input.setText(str(self._coefficients.B))
-            self.c_input.setText(str(self._coefficients.C))
+            self._set_coefficients()
 
     def _process_save_action(self) -> None:
         if self._matplotlib_widget:
@@ -264,6 +267,7 @@ class GraphBuilderWindow(QMainWindow):
         self.close()
 
     def _process_func_menu(self, action_name: str) -> None:
+        self._handle_radio_click(action_name)
         self._chosen_action = action_name
         self._coefficients = self._get_coeffs()
         if self._coefficients:
@@ -391,6 +395,17 @@ class GraphBuilderWindow(QMainWindow):
         temp_image_path = os.path.join("graph_builder", temp_file)
         self._matplotlib_widget.fig.savefig(temp_image_path)
 
+    def _handle_radio_click(self, action_name: str) -> None:
+        action = getattr(self, action_name)
+        for other_action in self.func_menu.actions():
+            if other_action != action:
+                other_action.setChecked(False)
+
+    def _set_coefficients(self) -> None:
+        self.a_input.setText(str(self._coefficients.A))
+        self.b_input.setText(str(self._coefficients.B))
+        self.c_input.setText(str(self._coefficients.C))
+
     @staticmethod
     def calc_sin_3x_squared(x: float) -> float:
         return math.sin(3 * (x ** 2))
@@ -427,10 +442,10 @@ class GraphBuilderWindow(QMainWindow):
         try:
             with open(path, "r") as file:
                 data = json.load(file)
-            if len(data) != 2 or len(data[0]) != len(data[1]):
+            if len(data) != 2 or len(data[0]) != len(data[1]) or len(data[0]) < 2:
                 MessageBox(
                     title="Format error",
-                    text="File must consist of two lists of the same size!",
+                    text="File must consist of two lists of the same size (>=2)!",
                     icon=QMessageBox.Warning,
                 ).display()
                 return None
