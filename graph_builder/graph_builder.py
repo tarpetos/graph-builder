@@ -75,6 +75,7 @@ class GraphBuilderWindow(QMainWindow):
 
         self._coefficients = Coefficients()
         self._set_coefficients()
+        self._set_initial_values()
 
     def _init_ui(self) -> None:
         self.central_widget = QWidget()
@@ -180,7 +181,8 @@ class GraphBuilderWindow(QMainWindow):
                 func = getattr(self, attr)
                 func.triggered.connect(
                     lambda checked, action_name=attr: self._process_func_menu(
-                        action_name
+                        checked,
+                        action_name,
                     )
                 )
                 self.func_menu.addAction(func)
@@ -199,12 +201,6 @@ class GraphBuilderWindow(QMainWindow):
         self.func_menu = QMenu("&Function", self)
         edit_menu.addMenu(self.func_menu)
         self._fill_menu_with_func_actions()
-        self._chosen_action = (
-            self.__func_prefix
-            + self.func_menu.actions()[0].text()[1:]
-            + self.__action_suffix
-        )
-        self.func_menu.actions()[0].setChecked(True)
         edit_menu.addAction(self.clear_action)
 
     def _click_on_buttons(self) -> None:
@@ -271,7 +267,10 @@ class GraphBuilderWindow(QMainWindow):
     def _process_exit_action(self) -> None:
         self.close()
 
-    def _process_func_menu(self, action_name: str) -> None:
+    def _process_func_menu(self, checked: bool, action_name: str) -> None:
+        if not checked:
+            self._clear_scene()
+            return None
         self._handle_radio_click(action_name)
         self._chosen_action = action_name
         self._coefficients = self._get_coeffs()
@@ -408,6 +407,12 @@ class GraphBuilderWindow(QMainWindow):
         self.a_input.setText(str(self._coefficients.A))
         self.b_input.setText(str(self._coefficients.B))
         self.c_input.setText(str(self._coefficients.C))
+
+    def _set_initial_values(self) -> None:
+        action_text = self.func_menu.actions()[0].text()[1:]
+        self._chosen_action = self.__func_prefix + action_text + self.__action_suffix
+        self.func_menu.actions()[0].setChecked(True)
+        self._process_func_menu(True, self.__func_prefix + action_text)
 
     @staticmethod
     def calc_sin_3x_squared(x: float) -> float:

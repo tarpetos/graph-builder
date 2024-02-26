@@ -30,7 +30,10 @@ class MatplotlibWidget(FigureCanvas):
         color: str = "blue",
     ) -> None:
         self.ax.plot(
-            x, y, ("o" if points_only else "o-") if show_points else "", color=color,
+            x,
+            y,
+            ("o" if points_only else "o-") if show_points else "",
+            color=color,
         )
         self.ax.set_title(title)
         self.ax.set_xlabel(x_label)
