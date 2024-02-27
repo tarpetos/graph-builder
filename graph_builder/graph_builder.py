@@ -22,7 +22,7 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QGraphicsPixmapItem,
     QFileDialog,
-    QMessageBox,
+    QMessageBox, QSpinBox,
 )
 
 from .lsm_calculator import LinearCalculator, ParabolicCalculator
@@ -102,8 +102,7 @@ class GraphBuilderWindow(QMainWindow):
         self.a_input.setPlaceholderText("A")
         self.b_input = QLineEdit()
         self.b_input.setPlaceholderText("B")
-        self.c_input = QLineEdit()
-        self.c_input.setPlaceholderText("C")
+        self.c_input = QSpinBox(minimum=2, maximum=100000)
         self.update_button = QPushButton("Update view")
 
         self.checker_box = QGroupBox()
@@ -407,7 +406,7 @@ class GraphBuilderWindow(QMainWindow):
     def _set_coefficients(self) -> None:
         self.a_input.setText(str(self._coefficients.A))
         self.b_input.setText(str(self._coefficients.B))
-        self.c_input.setText(str(self._coefficients.C))
+        self.c_input.setValue(self._coefficients.C)
 
     def _set_initial_values(self) -> None:
         action_text = self.func_menu.actions()[0].text()[1:]
