@@ -2,7 +2,7 @@ import json
 import math
 import os
 from dataclasses import dataclass, asdict
-from typing import Callable, Tuple, Optional, Any, Generator, List, Dict, Union
+from typing import Callable, Optional, Any, Generator
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
@@ -28,6 +28,7 @@ from PyQt5.QtWidgets import (
 from .lsm_calculator import LinearCalculator, ParabolicCalculator
 from .messagebox import MessageBox
 from .plot_widget import MatplotlibWidget
+from .types import PointsTuple, GraphData
 from .zoomable_graphic_view import ZoomableGraphView
 
 
@@ -43,7 +44,7 @@ class Coefficients:
 
 @dataclass
 class PlotData:
-    points: Tuple[List[float], List[float]]
+    points: PointsTuple
     show_points: bool = True
     points_only: bool = False
 
@@ -378,7 +379,7 @@ class GraphBuilderWindow(QMainWindow):
 
     def _generate_plot(
         self,
-        graphs_values: List[Dict[str, Union[Tuple[List[float], List[float]], bool]]],
+        graphs_values: GraphData,
     ) -> None:
         self._matplotlib_widget = MatplotlibWidget()
         for graph_data, color in zip(graphs_values, ("blue", "red", "green")):
@@ -411,8 +412,8 @@ class GraphBuilderWindow(QMainWindow):
     def _set_initial_values(self) -> None:
         action_text = self.func_menu.actions()[0].text()[1:]
         self._chosen_action = self.__func_prefix + action_text + self.__action_suffix
-        self.func_menu.actions()[0].setChecked(True)
         self._process_func_menu(True, self.__func_prefix + action_text)
+        self.func_menu.actions()[0].setChecked(True)
 
     @staticmethod
     def calc_sin_3x_squared(x: float) -> float:
@@ -436,7 +437,7 @@ class GraphBuilderWindow(QMainWindow):
         start_x: float,
         end_x: float,
         step_num: int,
-    ) -> Tuple[List[float], List[float]]:
+    ) -> PointsTuple:
         step = abs(end_x - start_x) / step_num
         x_values, y_values = [], []
         for i in range(step_num + 1):
@@ -446,7 +447,7 @@ class GraphBuilderWindow(QMainWindow):
         return x_values, y_values
 
     @staticmethod
-    def _open_parse_file(path: str) -> Optional[Tuple[List[float], List[float]]]:
+    def _open_parse_file(path: str) -> Optional[PointsTuple]:
         try:
             with open(path, "r") as file:
                 data = json.load(file)
@@ -456,7 +457,6 @@ class GraphBuilderWindow(QMainWindow):
                     text="File must consist of two lists of the same size (>=2)!",
                     icon=QMessageBox.Warning,
                 ).display()
-                return None
             return data
         except json.JSONDecodeError:
             MessageBox(
