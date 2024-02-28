@@ -2,7 +2,7 @@ import json
 import math
 import os
 from dataclasses import dataclass, asdict
-from typing import Callable, Optional, Any, Generator
+from typing import Callable, Optional, Any, Generator, Dict
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
@@ -22,7 +22,8 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QGraphicsPixmapItem,
     QFileDialog,
-    QMessageBox, QSpinBox,
+    QMessageBox,
+    QSpinBox,
 )
 
 from .lsm_calculator import LinearCalculator, ParabolicCalculator
@@ -258,7 +259,7 @@ class GraphBuilderWindow(QMainWindow):
         self.x_input.setText("")
         self.a_input.setText("")
         self.b_input.setText("")
-        self.c_input.setText("")
+        self.c_input.setValue(2)
         self.calculate_funcs_res.setText("")
         self.show_linear.setChecked(False)
         self.show_parabola.setChecked(False)
@@ -298,34 +299,19 @@ class GraphBuilderWindow(QMainWindow):
 
         if self._chosen_func:
             points = self.get_points(self._chosen_func, *self._coefficients)
+            show_points = self.show_points.isChecked()
             self._generate_plot(
                 [
-                    (
-                        asdict(
-                            PlotData(points=points, points_only=True),
-                        )
-                        if self.show_points.isChecked()
-                        else None
+                    self._get_plot(points, self.show_points, points_only=True),
+                    self._get_plot(
+                        LinearCalculator(points).find_lsm_points(),
+                        self.show_linear,
+                        show_points=show_points,
                     ),
-                    (
-                        asdict(
-                            PlotData(
-                                points=LinearCalculator(points).find_lsm_points(),
-                                show_points=self.show_points.isChecked(),
-                            )
-                        )
-                        if self.show_linear.isChecked()
-                        else None
-                    ),
-                    (
-                        asdict(
-                            PlotData(
-                                points=ParabolicCalculator(points).find_lsm_points(),
-                                show_points=self.show_points.isChecked(),
-                            ),
-                        )
-                        if self.show_parabola.isChecked()
-                        else None
+                    self._get_plot(
+                        ParabolicCalculator(points).find_lsm_points(),
+                        self.show_parabola,
+                        show_points=show_points,
                     ),
                 ]
             )
@@ -356,8 +342,16 @@ class GraphBuilderWindow(QMainWindow):
         self._coefficients = self._get_coeffs()
         self._plot_rebuild()
 
-    def _clear_scene(self) -> None:
+    def _disable_selected_action(self) -> None:
+        for action in self.func_menu.actions():
+            if action.isChecked():
+                action.setChecked(False)
+                self._chosen_action = self._chosen_func = None
+                return None
+
+    def _clear_scene(self, *args) -> None:
         self.scene.clear()
+        self._disable_selected_action() if args else None
 
     def _reload_scene(self) -> None:
         self._clear_scene()
@@ -375,6 +369,13 @@ class GraphBuilderWindow(QMainWindow):
         if self._chosen_action and self._coefficients:
             self._build_plot(self._chosen_action)
             self._reload_scene()
+        else:
+            self._coefficients and MessageBox(
+                title="No function",
+                text="Function not selected!",
+                icon=QMessageBox.Warning,
+                detailed_text="Edit -> Function -> Select desired option...",
+            ).display()
 
     def _generate_plot(
         self,
@@ -431,6 +432,11 @@ class GraphBuilderWindow(QMainWindow):
         return math.e**x
 
     @staticmethod
+    def calc_sofi(x: float) -> float:
+        a = n = 228
+        return x * a * n * a * x
+
+    @staticmethod
     def get_points(
         func: Callable,
         start_x: float,
@@ -444,6 +450,20 @@ class GraphBuilderWindow(QMainWindow):
             y_values.append(round(func(start_x), 3))
             start_x = start_x + step
         return x_values, y_values
+
+    @staticmethod
+    def _get_plot(
+        points: PointsTuple,
+        show_options: QCheckBox,
+        *,
+        show_points: bool = True,
+        points_only: bool = False,
+    ) -> Optional[Dict[str, Any]]:
+        return (
+            asdict(PlotData(points, show_points, points_only))
+            if show_options.isChecked()
+            else None
+        )
 
     @staticmethod
     def _open_parse_file(path: str) -> Optional[PointsTuple]:
