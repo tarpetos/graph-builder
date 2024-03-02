@@ -279,7 +279,7 @@ class GraphBuilderWindow(QMainWindow):
         graphs_values: GraphData,
     ) -> None:
         self._matplotlib_widget = MatplotlibWidget()
-        for graph_data, color in zip(graphs_values, ("blue", "red", "green")):
+        for graph_data, color in zip(graphs_values, ("yellow", "blue", "black")):
             if graph_data is None:
                 continue
             x, y = graph_data["points"]

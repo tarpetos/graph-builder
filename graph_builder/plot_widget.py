@@ -3,6 +3,7 @@ from typing import Optional, List
 from matplotlib import pyplot as plt
 from matplotlib.backend_bases import FigureCanvasBase
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import seaborn as sns
 
 
 class MatplotlibWidget(FigureCanvas):
@@ -16,6 +17,7 @@ class MatplotlibWidget(FigureCanvas):
         self.fig, self.ax = plt.subplots(figsize=(width, height), dpi=dpi)
         FigureCanvas.__init__(self, self.fig)
         self.setParent(parent)
+        sns.set_palette("pastel")
 
     def plot(
         self,
@@ -38,8 +40,10 @@ class MatplotlibWidget(FigureCanvas):
         self.ax.set_title(title)
         self.ax.set_xlabel(x_label)
         self.ax.set_ylabel(y_label)
+        self.ax.set_facecolor("gray")
+        self.fig.tight_layout()
         self.show_grid()
         self.draw()
 
     def show_grid(self, show: bool = True) -> None:
-        self.ax.grid(show)
+        self.ax.grid(show, linestyle="--", linewidth=0.5, alpha=0.7)
