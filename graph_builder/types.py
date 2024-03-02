@@ -5,3 +5,5 @@ from PyQt5.QtWidgets import QMessageBox
 PointsTuple: Type = Tuple[List[float], List[float]]
 GraphData = List[Dict[str, Union[PointsTuple, bool]]]
 Buttons = Union[QMessageBox.StandardButtons, QMessageBox.StandardButton]
+Vector = Union[Tuple[float], List[float]]
+Matrix = Union[Tuple[Vector], List[Vector]]
